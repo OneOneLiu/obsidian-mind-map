@@ -64,9 +64,9 @@ import { MindMapSettingsTab } from './settings-tab';
       console.log("Unloading Mind Map plugin");
     }
 
-    activeLeafPath(workspace: Workspace) {
-      return workspace.activeLeaf?.view.getState().file;
-    }
+    activeLeafPath(workspace: Workspace): string {
+      return workspace.activeLeaf?.view.getState().file as string || "";
+  }
 
     activeLeafName(workspace: Workspace) {
       return workspace.activeLeaf?.getDisplayText();
