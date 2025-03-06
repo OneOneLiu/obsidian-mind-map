@@ -165,6 +165,9 @@ export default class MindmapView extends ItemView {
         }
         // ignore code blocks
         md = md.replace(/```[\s\S]*?```/g, '');
+        // ignore blockquotes
+        md = md.replace(/^\s*>.*$/gm, '');
+
         const markDownHasChanged = this.currentMd != md;
         this.currentMd = md;
         return markDownHasChanged;
