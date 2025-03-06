@@ -129,7 +129,7 @@ export default class MindmapView extends ItemView {
                 this.renderMarkmap(root, this.svg);
             }
         }
-        this.displayText = this.fileName != undefined ? `Mind Map of ${this.fileName}` : 'Mind Map'; 
+        this.displayText = this.fileName != undefined ? `Mind Map of ${this.fileName}` : 'Mind Map';
         this.load();
     }
 
@@ -163,6 +163,8 @@ export default class MindmapView extends ItemView {
         if(md.startsWith('---')) {
             md = md.replace(FRONT_MATTER_REGEX, '');
         }
+        // ignore code blocks
+        md = md.replace(/```[\s\S]*?```/g, '');
         const markDownHasChanged = this.currentMd != md;
         this.currentMd = md;
         return markDownHasChanged;
@@ -170,10 +172,34 @@ export default class MindmapView extends ItemView {
     
     async transformMarkdown() {
         const { root, features } = transform(this.currentMd);
-        this.obsMarkmap.updateInternalLinks(root);
-        return { root, features };
+        // 对生成的节点树进行过滤处理
+        const filteredRoot = this.filterIgnoredNodes(root);
+        this.obsMarkmap.updateInternalLinks(filteredRoot);
+        return { root: filteredRoot, features };
     }
     
+    private filterIgnoredNodes(node: INode): INode | null {
+        // 判断当前节点是否需要忽略：这里的规则可以根据需求调整
+        if (/<!--\s*ignore\s*-->/.test(node.v)) {
+            
+            // 返回 null 表示忽略此节点及其所有子节点
+            return null;
+        }
+
+        // 如果有子节点则递归过滤
+        if (node.c && node.c.length > 0) {
+            const newChildren = [];
+            for (const child of node.c) {
+                const filteredChild = this.filterIgnoredNodes(child);
+                if (filteredChild !== null) {
+                    newChildren.push(filteredChild);
+                }
+            }
+            node.c = newChildren;
+        }
+        return node;
+    }
+
     async renderMarkmap(root: INode, svg: SVGElement) {
         const { font } = getComputedCss(this.containerEl);
         const options: IMarkmapOptions = {
